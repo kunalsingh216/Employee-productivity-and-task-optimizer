@@ -1,0 +1,10 @@
+.landing-page {
+  min-height: 100vh;
+}
+
+.footer {
+  background: #333;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+}

@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Employee Productivity Tool (Dynamic + Backend)</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --analytics-graph-height: 220px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .header h1 {
+        font-size: 2rem;
+        margin-bottom: 6px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .nav-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .nav-tab {
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.9);
+        color: #666;
+        font-weight: 600;
+      }
+      .nav-tab.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        margin-bottom: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #eee;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #667eea;
+        transition: all 0.2s ease;
+      }
+      .back-button:hover {
+        background: rgba(102, 126, 234, 0.1);
+        transform: translateX(-2px);
+      }
+      .back-button:active {
+        transform: translateX(0);
+      }
+      .content-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      .stat-card {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        padding: 16px;
+        border-radius: 10px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      .table th,
+      .table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+      }
+      .table th {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        font-weight: 700;
+      }
+      .btn {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin: 2px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+      .btn-success {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+        color: white;
+      }
+      .btn-warning {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+        color: white;
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #f83600, #fe8c00);
+        color: white;
+      }
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal {
+        background: white;
+        padding: 18px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 540px;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 12px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .workload-bar {
+        height: 12px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .workload-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+      .workload-low {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+      }
+      .workload-medium {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+      }
+      .workload-high {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+      }
+      .status-badge {
+        padding: 6px 10px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+      .status-pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .status-in_progress {
+        background: #cce5ff;
+        color: #004085;
+      }
+      .status-completed {
+        background: #d4edda;
+        color: #155724;
+      }
+      .priority-badge {
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+      }
+      .section {
+        margin-bottom: 24px;
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+      }
+      .pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        background: rgba(102, 126, 234, 0.15);
+        color: #5a67d8;
+        font-weight: 600;
+      }
+      .grid-two {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .grid-three {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .graph-card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #eee;
+        display: flex;
+        flex-direction: column;
+        height: var(--analytics-graph-height);
+        min-height: var(--analytics-graph-height);
+        max-height: var(--analytics-graph-height);
+        overflow: hidden;
+      }
+      .graph-card canvas {
+        width: 100%;
+        height: 100%;
+      }
+      .analytics-card {
+        padding: 24px;
+      }
+      .analytics-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2.25fr) minmax(280px, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 20px;
+        align-items: stretch;
+        min-height: min(580px, calc(100vh - 260px));
+      }
+      .analytics-stats-row {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .graph-stack {
+        display: grid;
+        grid-template-rows: repeat(3, var(--analytics-graph-height));
+        gap: 16px;
+      }
+      .top-performers-card {
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 12px;
+        border: 1px solid #eee;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      @media (max-width: 1100px) {
+        .analytics-grid {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: auto auto;
+        }
+        .analytics-stats-row {
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
+        :root {
+          --analytics-graph-height: 200px;
+        }
+        .graph-stack {
+          grid-template-rows: none;
+          grid-auto-rows: var(--analytics-graph-height);
+        }
+      }
+      .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .quick-action {
+        flex: 1;
+        min-width: 140px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid #eee;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .quick-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+      }
+      .tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.05);
+      }
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #1a202c;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        z-index: 1100;
+        font-weight: 600;
+      }
+      .toast-success {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+        color: #0b3d2c;
+      }
+      .toast-error {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: #4a1d2f;
+      }
+      .toast-info {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+      }
+      .timeline {
+        list-style: none;
+        padding-left: 12px;
+        position: relative;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 4px;
+        bottom: 0;
+        width: 2px;
+        background: rgba(102, 126, 234, 0.3);
+      }
+      .timeline-item {
+        margin-bottom: 12px;
+        padding-left: 20px;
+        position: relative;
+      }
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #667eea;
+        left: -2px;
+        top: 6px;
+      }
+      .filter-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .filter-row > * {
+        flex: 1;
+        min-width: 140px;
+      }
+      .search-input {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .table-actions {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+      }
+      .badge-success {
+        background: #d4edda;
+        color: #155724;
+      }
+      .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .badge-info {
+        background: #cce5ff;
+        color: #004085;
+      }
+      .empty-state {
+        padding: 20px;
+        text-align: center;
+        color: #777;
+      }
+      .view-toggle {
+        display: inline-flex;
+        border: 1px solid rgba(118, 75, 162, 0.3);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .view-toggle button {
+        border: none;
+        background: transparent;
+        padding: 8px 16px;
+        font-weight: 600;
+        color: #764ba2;
+        cursor: pointer;
+      }
+      .view-toggle button.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+      .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .kanban-column {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #eee;
+        display: flex;
+        flex-direction: column;
+        max-height: 520px;
+      }
+      .kanban-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .kanban-count {
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        background: rgba(118, 75, 162, 0.12);
+        color: #764ba2;
+      }
+      .kanban-cards {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding-right: 4px;
+      }
+      .kanban-card {
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid transparent;
+      }
+      .kanban-card h4 {
+        margin-bottom: 6px;
+      }
+      .kanban-meta {
+        font-size: 0.82rem;
+        color: #555;
+        margin-bottom: 8px;
+      }
+      .kanban-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef, useCallback, useMemo } = React;
+      const DEV_API_PORT = 5501;
+      const API_PROTOCOL =
+        window.location.protocol === "https:" ? "https:" : "http:";
+      const HOSTNAME_FALLBACK =
+        window.location.hostname && window.location.hostname !== ""
+          ? window.location.hostname
+          : "localhost";
+      const overrideApiBase =
+        typeof window !== "undefined" &&
+        typeof window.__EMPLOYEE_TOOL_API__ === "string"
+          ? window.__EMPLOYEE_TOOL_API__
+          : null;
+      const candidateApiBases = [];
+
+      if (overrideApiBase) {
+        candidateApiBases.push(overrideApiBase.replace(/\/$/, ""));
+      }
+
+      if (
+        window.location.origin &&
+        window.location.origin !== "null" &&
+        window.location.origin !== ""
+      ) {
+        candidateApiBases.push(window.location.origin.replace(/\/$/, ""));
+      }
+
+      const inferredDevBase = `${API_PROTOCOL}//${HOSTNAME_FALLBACK}:${DEV_API_PORT}`;
+      candidateApiBases.push(inferredDevBase);
+      if (!inferredDevBase.includes("localhost")) {
+        candidateApiBases.push(`http://localhost:${DEV_API_PORT}`);
+      }
+
+      const API_BASES = Array.from(
+        new Set(candidateApiBases.filter(Boolean))
+      );
+      let API_BASE = API_BASES[0];
+      const API_PREFIX = "/api";
+      const shouldForceFallbackOn404 =
+        window.location.protocol === "file:" ||
+        (window.location.port &&
+          window.location.port !== "" &&
+          window.location.port !== String(DEV_API_PORT));
+
+      const STATUS_OPTIONS = [
+        { label: "Pending", value: "pending" },
+        { label: "In Progress", value: "in_progress" },
+        { label: "Completed", value: "completed" },
+        { label: "Cancelled", value: "cancelled" },
+      ];
+
+      const PRIORITY_LABELS = {
+        1: "Very Low",
+        2: "Low",
+        3: "Normal",
+        4: "High",
+        5: "Critical",
+      };
+
+      function AnimatedNumber({ value = 0, suffix = "" }) {
+        const [display, setDisplay] = useState(0);
+
+        useEffect(() => {
+          let start = 0;
+          const end = value || 0;
+          const step = Math.max(1, Math.ceil(end / 30));
+          const id = setInterval(() => {
+            start += step;
+            if (start >= end) {
+              setDisplay(end);
+              clearInterval(id);
+            } else {
+              setDisplay(start);
+            }
+          }, 40);
+          return () => clearInterval(id);
+        }, [value]);
+
+        return (
+          <span>
+            {display}
+            {suffix}
+          </span>
+        );
+      }
+
+      function Toast({ toast, onDismiss }) {
+        useEffect(() => {
+          if (!toast) return;
+          const id = setTimeout(onDismiss, 3200);
+          return () => clearTimeout(id);
+        }, [toast, onDismiss]);
+
+        if (!toast) return null;
+        return (
+          <div className={`toast toast-${toast.variant || "info"}`}>
+            {toast.message}
+          </div>
+        );
+      }
+
+      function Modal({ open, title, onClose, children }) {
+        if (!open) return null;
+        return (
+          <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="section-header">
+                <div className="section-title">{title}</div>
+                <button className="btn btn-warning" onClick={onClose}>
+                  Close
+                </button>
+              </div>
+              <div>{children}</div>
+            </div>
+          </div>
+        );
+      }
+
+      async function fetchJSON(path, options = {}) {
+        const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+        const apiPath = normalizedPath.startsWith(API_PREFIX)
+          ? normalizedPath
+          : `${API_PREFIX}${normalizedPath}`;
+        let lastError = null;
+
+        for (let idx = 0; idx < API_BASES.length; idx++) {
+          const base = API_BASES[idx];
+          const url = `${base}${apiPath}`;
+          try {
+            const response = await fetch(url, {
+              headers: { "Content-Type": "application/json" },
+              ...options,
+            });
+
+            if (!response.ok) {
+              const errorBody = await response.json().catch(() => ({}));
+              const message =
+                errorBody.error ||
+                `Request failed (${response.status}${
+                  errorBody.details ? `: ${errorBody.details}` : ""
+                })`;
+
+              const canTryFallback =
+                idx < API_BASES.length - 1 &&
+                response.status === 404 &&
+                shouldForceFallbackOn404;
+
+              if (canTryFallback) {
+                lastError = new Error(message);
+                continue;
+              }
+
+              throw new Error(message);
+            }
+
+            if (idx !== 0) {
+              API_BASES.splice(idx, 1);
+              API_BASES.unshift(base);
+              API_BASE = API_BASES[0];
+            }
+
+            return response.json();
+          } catch (err) {
+            lastError = err;
+            if (idx === API_BASES.length - 1) {
+              throw err;
+            }
+          }
+        }
+
+        throw lastError || new Error("Unable to complete request");
+      }
+
+      function App() {
+        const [activeTab, setActiveTab] = useState("dashboard");
+        const [navHistory, setNavHistory] = useState(["dashboard"]);
+        const [toast, setToast] = useState(null);
+
+        const showToast = (message, variant = "info") =>
+          setToast({ message, variant });
+
+        const handleTabChange = (tab) => {
+          setNavHistory((prev) => {
+            if (prev[prev.length - 1] !== tab) {
+              return [...prev, tab];
+            }
+            return prev;
+          });
+          setActiveTab(tab);
+        };
+
+        const handleBack = () => {
+          if (navHistory.length > 1) {
+            const newHistory = [...navHistory];
+            newHistory.pop();
+            const previousTab = newHistory[newHistory.length - 1];
+            setNavHistory(newHistory);
+            setActiveTab(previousTab);
+          } else {
+            setActiveTab("dashboard");
+          }
+        };
+
+        return (
+          <div className="container">
+            <Toast toast={toast} onDismiss={() => setToast(null)} />
+            <div className="header">
+              <h1>Employee Productivity Tool</h1>
+              <div style={{ color: "#666" }}>
+                Optimize task allocation and track team performance
+              </div>
+            </div>
+
+            <div className="nav-tabs">
+              {["dashboard", "tasks", "employees", "analytics"].map((tab) => (
+                <div
+                  key={tab}
+                  className={`nav-tab ${activeTab === tab ? "active" : ""}`}
+                  onClick={() => handleTabChange(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </div>
+              ))}
+            </div>
+
+            {activeTab === "dashboard" && (
+              <Dashboard
+                onNavigateTasks={() => handleTabChange("tasks")}
+                onBack={handleBack}
+                showToast={showToast}
+              />
+            )}
+            {activeTab === "tasks" && (
+              <Tasks onBack={handleBack} showToast={showToast} />
+            )}
+            {activeTab === "employees" && (
+              <Employees onBack={handleBack} showToast={showToast} />
+            )}
+            {activeTab === "analytics" && (
+              <Analytics onBack={handleBack} showToast={showToast} />
+            )}
+          </div>
+        );
+      }
+
+      function BackButton({ onBack }) {
+        return (
+          <button className="back-button" onClick={onBack} type="button">
+            ← Back
+          </button>
+        );
+      }
+
+      function Dashboard({ onNavigateTasks, onBack }) {
+        const [data, setData] = useState(null);
+        const [loading, setLoading] = useState(false);
+
+        useEffect(() => {
+          setLoading(true);
+            fetchJSON("/analytics/dashboard")
+            .then(setData)
+            .finally(() => setLoading(false));
+        }, []);
+
+        if (loading || !data)
+          return (
+            <div className="loading">
+              <div className="spinner" />
+              Loading dashboard...
+            </div>
+          );
+
+        const stats = data.stats || {};
+        const performers = (data.employeePerformance || []).slice(0, 4);
+
+        return (
+          <div>
+            <BackButton onBack={onBack} />
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-value">
+                  <AnimatedNumber value={stats.total_tasks || 0} />
+                </div>
+                <div>Total Tasks</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  <AnimatedNumber value={stats.completed_tasks || 0} />
+                </div>
+                <div>Completed</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  <AnimatedNumber value={stats.active_tasks || 0} />
+                </div>
+                <div>Active</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  <AnimatedNumber
+                    value={Math.round((stats.avg_time_accuracy || 0) * 100)}
+                    suffix="%"
+                  />
+                </div>
+                <div>Time Accuracy</div>
+              </div>
+            </div>
+
+            <div className="grid-two">
+              <div className="content-card">
+                <div className="section-header">
+                  <div className="section-title">Quick Actions</div>
+                  <span className="pill">Boost productivity</span>
+                </div>
+                <div className="quick-actions">
+                  <div className="quick-action" onClick={onNavigateTasks}>
+                    <div style={{ fontWeight: 700 }}>Create Task</div>
+                    <div style={{ color: "#666", fontSize: "0.85rem" }}>
+                      Capture requirements and assign later
+                    </div>
+                  </div>
+                  <div className="quick-action" onClick={onNavigateTasks}>
+                    <div style={{ fontWeight: 700 }}>Automate Assignment</div>
+                    <div style={{ color: "#666", fontSize: "0.85rem" }}>
+                      Let the AI match tasks ➔ team
+                    </div>
+                  </div>
+                  <div className="quick-action" onClick={onNavigateTasks}>
+                    <div style={{ fontWeight: 700 }}>Update Status</div>
+                    <div style={{ color: "#666", fontSize: "0.85rem" }}>
+                      Keep pipeline clean & predictable
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="content-card">
+                <div className="section-header">
+                  <div className="section-title">Top Performers</div>
+                  <span className="pill">High efficiency</span>
+                </div>
+                {performers.length === 0 && (
+                  <div className="empty-state">No performance data yet.</div>
+                )}
+                {performers.map((emp) => {
+                  const load =
+                    Math.min(
+                      100,
+                      Math.round(((emp.current_workload || 0) / 40) * 100)
+                    ) || 0;
+                  return (
+                    <div
+                      key={emp.id}
+                      style={{ marginBottom: 14, borderBottom: "1px solid #eee", paddingBottom: 10 }}
+                    >
+                      <div style={{ fontWeight: 700 }}>{emp.name}</div>
+                      <div style={{ fontSize: "0.85rem", color: "#666" }}>
+                        Efficiency {emp.efficiency_score?.toFixed(1) ?? "--"} •{" "}
+                        {emp.total_tasks} tasks
+                      </div>
+                      <div className="workload-bar" style={{ marginTop: 8 }}>
+                        <div
+                          className={`workload-fill ${
+                            load < 40
+                              ? "workload-low"
+                              : load < 70
+                              ? "workload-medium"
+                              : "workload-high"
+                          }`}
+                          style={{ width: `${load}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function Tasks({ showToast, onBack }) {
+        const [tasks, setTasks] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [statusFilter, setStatusFilter] = useState("");
+        const [search, setSearch] = useState("");
+        const [viewMode, setViewMode] = useState("list");
+
+        const loadTasks = () => {
+          setLoading(true);
+          fetchJSON("/tasks")
+            .then(setTasks)
+            .finally(() => setLoading(false));
+        };
+
+        useEffect(() => {
+          loadTasks();
+        }, []);
+
+        const filteredTasks = tasks.filter((task) => {
+          const matchesStatus = statusFilter
+            ? task.status === statusFilter
+            : true;
+          const matchesSearch = task.title
+            .toLowerCase()
+            .includes(search.toLowerCase());
+          return matchesStatus && matchesSearch;
+        });
+
+        const updateStatus = async (task, status) => {
+          try {
+            const payload = { status };
+            if (status === "completed") {
+              const hours = prompt(
+                "Actual hours spent (required to complete task):",
+                task.actual_hours || task.estimated_hours
+              );
+              if (!hours) return;
+              payload.actual_hours = parseFloat(hours);
+              if (isNaN(payload.actual_hours)) {
+                showToast("Enter a valid number of hours", "error");
+                return;
+              }
+            }
+            await fetchJSON(`/tasks/${task.id}/status`, {
+              method: "PUT",
+              body: JSON.stringify(payload),
+            });
+            showToast("Task updated", "success");
+            loadTasks();
+          } catch (err) {
+            showToast(err.message, "error");
+          }
+        };
+
+        const assignTask = async (taskId) => {
+          try {
+            await fetchJSON(`/tasks/${taskId}/assign`, {
+              method: "POST",
+            });
+            showToast("Task assigned", "success");
+            loadTasks();
+          } catch (err) {
+            showToast(err.message, "error");
+          }
+        };
+
+        return (
+          <div>
+            <BackButton onBack={onBack} />
+            <div className="grid-two">
+              <div className="content-card">
+                <div className="section-header">
+                  <div className="section-title">Task Pipeline</div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <span className="pill">{tasks.length} tasks</span>
+                  <div className="view-toggle">
+                    <button
+                      className={viewMode === "list" ? "active" : ""}
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                    >
+                      List
+                    </button>
+                    <button
+                      className={viewMode === "board" ? "active" : ""}
+                      type="button"
+                      onClick={() => setViewMode("board")}
+                    >
+                      Board
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <TaskSummaryCards tasks={tasks} />
+
+              <div className="filter-row">
+                <select
+                  className="form-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All statuses</option>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="search-input"
+                  placeholder="Search by title"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                  Loading tasks...
+                </div>
+              ) : viewMode === "list" ? (
+                filteredTasks.length === 0 ? (
+                  <div className="empty-state">
+                    No tasks match the filters.
+                  </div>
+                ) : (
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Difficulty</th>
+                        <th>Priority</th>
+                        <th>Owner</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredTasks.map((task) => (
+                        <tr key={task.id}>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{task.title}</div>
+                            <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                              {task.description || "No description"}
+                            </div>
+                          </td>
+                          <td>{task.difficulty}/10</td>
+                          <td>
+                            <span className="priority-badge">
+                              {PRIORITY_LABELS[task.priority] || "Normal"}
+                            </span>
+                          </td>
+                          <td>{task.assigned_name || "Unassigned"}</td>
+                          <td>
+                            <span
+                              className={`status-badge status-${task.status}`}
+                            >
+                              {task.status.replace("_", " ")}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="table-actions">
+                              <select
+                                className="form-select"
+                                value={task.status}
+                                onChange={(e) =>
+                                  updateStatus(task, e.target.value)
+                                }
+                              >
+                                {STATUS_OPTIONS.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                className="btn btn-success"
+                                onClick={() => assignTask(task.id)}
+                              >
+                                Auto Assign
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              ) : (
+                <TaskBoard
+                  tasks={filteredTasks}
+                  onStatusChange={updateStatus}
+                  onAutoAssign={assignTask}
+                />
+              )}
+            </div>
+
+            <TaskForm
+              onCreated={() => {
+                loadTasks();
+                showToast("Task created", "success");
+              }}
+              showToast={showToast}
+            />
+            </div>
+          </div>
+        );
+      }
+
+      function TaskForm({ onCreated, showToast }) {
+        const [form, setForm] = useState({
+          title: "",
+          description: "",
+          difficulty: 5,
+          estimated_hours: 4,
+          priority: 3,
+        });
+        const [submitting, setSubmitting] = useState(false);
+
+        const handleChange = (e) => {
+          const { name, value } = e.target;
+          setForm((prev) => ({ ...prev, [name]: value }));
+        };
+
+        const submit = async (e) => {
+          e.preventDefault();
+          if (!form.title.trim()) {
+            showToast("Title is required", "error");
+            return;
+          }
+          setSubmitting(true);
+          try {
+            await fetchJSON("/tasks", {
+              method: "POST",
+              body: JSON.stringify({
+                ...form,
+                difficulty: Number(form.difficulty),
+                estimated_hours: Number(form.estimated_hours),
+                priority: Number(form.priority),
+              }),
+            });
+            setForm({
+              title: "",
+              description: "",
+              difficulty: 5,
+              estimated_hours: 4,
+              priority: 3,
+            });
+            onCreated?.();
+          } catch (err) {
+            showToast(err.message, "error");
+          } finally {
+            setSubmitting(false);
+          }
+        };
+
+        return (
+          <div className="content-card analytics-card">
+            <div className="section-title">Create Task</div>
+            <form onSubmit={submit} style={{ marginTop: 12 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label>Title</label>
+                <input
+                  className="form-input"
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Short task title"
+                  required
+                />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label>Description</label>
+                <textarea
+                  className="form-textarea"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="Context or acceptance criteria"
+                />
+              </div>
+              <div className="filter-row">
+                <div>
+                  <label>Difficulty</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    name="difficulty"
+                    min="1"
+                    max="10"
+                    value={form.difficulty}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>Estimated Hours</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    name="estimated_hours"
+                    min="1"
+                    step="0.5"
+                    value={form.estimated_hours}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>Priority</label>
+                  <select
+                    className="form-select"
+                    name="priority"
+                    value={form.priority}
+                    onChange={handleChange}
+                  >
+                    {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={submitting}
+                style={{ marginTop: 12, width: "100%" }}
+              >
+                {submitting ? "Saving..." : "Create Task"}
+              </button>
+            </form>
+          </div>
+        );
+      }
+
+      function TaskSummaryCards({ tasks }) {
+        const totals = tasks.reduce(
+          (acc, task) => {
+            acc.total += 1;
+            acc[task.status] = (acc[task.status] || 0) + 1;
+            if (!task.assigned_to) acc.unassigned += 1;
+            if (task.priority >= 4) acc.highPriority += 1;
+            acc.avgDifficulty += task.difficulty || 0;
+            return acc;
+          },
+          {
+            total: 0,
+            pending: 0,
+            in_progress: 0,
+            completed: 0,
+            cancelled: 0,
+            unassigned: 0,
+            highPriority: 0,
+            avgDifficulty: 0,
+          }
+        );
+
+        const avgDifficulty = totals.total
+          ? (totals.avgDifficulty / totals.total).toFixed(1)
+          : 0;
+        const completionRate = totals.total
+          ? Math.round((totals.completed / totals.total) * 100)
+          : 0;
+
+        const cards = [
+          {
+            label: "Total Tasks",
+            value: totals.total,
+            subtitle: `${totals.in_progress} active • ${totals.pending} backlog`,
+            gradient: "linear-gradient(135deg, #667eea, #764ba2)",
+          },
+          {
+            label: "Completion Rate",
+            value: `${completionRate}%`,
+            subtitle: `${totals.completed} done`,
+            gradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
+          },
+          {
+            label: "High Priority",
+            value: totals.highPriority,
+            subtitle: `${totals.unassigned} waiting assignment`,
+            gradient: "linear-gradient(135deg, #f093fb, #f5576c)",
+          },
+          {
+            label: "Avg Difficulty",
+            value: avgDifficulty,
+            subtitle: "Scale 1-10",
+            gradient: "linear-gradient(135deg, #fa709a, #fee140)",
+          },
+        ];
+
+        return (
+          <div className="stats-grid" style={{ marginTop: 0 }}>
+            {cards.map((card) => (
+              <div
+                key={card.label}
+                className="stat-card"
+                style={{ background: card.gradient }}
+              >
+                <div className="stat-value">{card.value}</div>
+                <div>{card.label}</div>
+                <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                  {card.subtitle}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      function TaskBoard({ tasks, onStatusChange, onAutoAssign }) {
+        const columns = [
+          {
+            key: "pending",
+            label: "Backlog",
+            accent: "#fee140",
+            emptyCopy: "Capture new ideas here.",
+            cta: "Start",
+            nextStatus: "in_progress",
+            showAssign: true,
+          },
+          {
+            key: "in_progress",
+            label: "In Progress",
+            accent: "#38f9d7",
+            emptyCopy: "Nothing in flight right now.",
+            cta: "Complete",
+            nextStatus: "completed",
+            showAssign: false,
+          },
+          {
+            key: "completed",
+            label: "Completed",
+            accent: "#43e97b",
+            emptyCopy: "Ship something today!",
+            showAssign: false,
+          },
+          {
+            key: "cancelled",
+            label: "Blocked / Cancelled",
+            accent: "#f093fb",
+            emptyCopy: "No blockers logged.",
+            showAssign: false,
+          },
+        ];
+
+        return (
+          <div className="kanban-board">
+            {columns.map((column) => {
+              const columnTasks = tasks.filter(
+                (task) => task.status === column.key
+              );
+              return (
+                <div className="kanban-column" key={column.key}>
+                  <div className="kanban-header">
+                    <div style={{ fontWeight: 700 }}>{column.label}</div>
+                    <span className="kanban-count">{columnTasks.length}</span>
+                  </div>
+                  <div className="kanban-cards">
+                    {columnTasks.length === 0 ? (
+                      <div className="empty-state" style={{ padding: 12 }}>
+                        {column.emptyCopy}
+                      </div>
+                    ) : (
+                      columnTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="kanban-card"
+                          style={{ borderTopColor: column.accent }}
+                        >
+                          <h4>{task.title}</h4>
+                          <div className="kanban-meta">
+                            Difficulty {task.difficulty}/10 •{" "}
+                            {PRIORITY_LABELS[task.priority] || "Normal"}
+                          </div>
+                          <div className="kanban-meta">
+                            Owner: {task.assigned_name || "Unassigned"}
+                          </div>
+                          <div className="kanban-actions">
+                            {column.nextStatus && (
+                              <button
+                                className="btn btn-success"
+                                onClick={() =>
+                                  onStatusChange(task, column.nextStatus)
+                                }
+                              >
+                                {column.cta || "Advance"}
+                              </button>
+                            )}
+                            {column.key !== "completed" && (
+                              <button
+                                className="btn btn-warning"
+                                onClick={() => onStatusChange(task, "pending")}
+                              >
+                                Reset
+                              </button>
+                            )}
+                            {column.showAssign && (
+                              <button
+                                className="btn btn-primary"
+                                onClick={() => onAutoAssign(task.id)}
+                              >
+                                Auto Assign
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      function Employees({ showToast, onBack }) {
+        const [employees, setEmployees] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [search, setSearch] = useState("");
+        const [selectedEmployee, setSelectedEmployee] = useState(null);
+        const [recommendation, setRecommendation] = useState(null);
+        const [addModalOpen, setAddModalOpen] = useState(false);
+        const [creatingEmployee, setCreatingEmployee] = useState(false);
+        const [removingId, setRemovingId] = useState(null);
+        const [newEmployee, setNewEmployee] = useState({
+          name: "",
+          email: "",
+          experience_level: 1,
+          efficiency_score: 5,
+        });
+
+        const loadEmployees = () => {
+          setLoading(true);
+          fetchJSON("/employees")
+            .then(setEmployees)
+            .finally(() => setLoading(false));
+        };
+
+        useEffect(() => {
+          loadEmployees();
+        }, []);
+
+        const filteredEmployees = employees.filter((emp) =>
+          emp.name.toLowerCase().includes(search.toLowerCase())
+        );
+
+        const fetchRecommendations = async (employee) => {
+          setSelectedEmployee(employee);
+          try {
+            const data = await fetchJSON(`/recommendations/${employee.id}`);
+            setRecommendation(data);
+          } catch (err) {
+            showToast(err.message, "error");
+          }
+        };
+
+        const resetNewEmployee = () =>
+          setNewEmployee({
+            name: "",
+            email: "",
+            experience_level: 1,
+            efficiency_score: 5,
+          });
+
+        const handleNewEmployeeChange = (e) => {
+          const { name, value } = e.target;
+          setNewEmployee((prev) => ({ ...prev, [name]: value }));
+        };
+
+        const createEmployee = async (e) => {
+          e.preventDefault();
+          if (!newEmployee.name.trim() || !newEmployee.email.trim()) {
+            showToast("Name and email are required", "error");
+            return;
+          }
+          setCreatingEmployee(true);
+          try {
+            await fetchJSON("/employees", {
+              method: "POST",
+              body: JSON.stringify({
+                ...newEmployee,
+                experience_level: Number(newEmployee.experience_level),
+                efficiency_score: Number(newEmployee.efficiency_score),
+              }),
+            });
+            showToast("Employee added", "success");
+            setAddModalOpen(false);
+            resetNewEmployee();
+            loadEmployees();
+          } catch (err) {
+            showToast(err.message, "error");
+          } finally {
+            setCreatingEmployee(false);
+          }
+        };
+
+        const deleteEmployee = async (employee) => {
+          if (!employee) return;
+          const confirmed = window.confirm(
+            `Remove ${employee.name}? Any tasks they own will be unassigned.`
+          );
+          if (!confirmed) return;
+
+          setRemovingId(employee.id);
+          try {
+            await fetchJSON(`/api/employees/${employee.id}`, { method: "DELETE" });
+            showToast("Employee removed", "success");
+
+            if (selectedEmployee?.id === employee.id) {
+              setSelectedEmployee(null);
+              setRecommendation(null);
+            }
+
+            loadEmployees();
+          } catch (err) {
+            showToast(err.message, "error");
+          } finally {
+            setRemovingId(null);
+          }
+        };
+
+        return (
+          <div>
+            <BackButton onBack={onBack} />
+            <div className="content-card analytics-card">
+              <div className="section-header">
+                <div className="section-title">Team Overview</div>
+              <button
+                className="btn btn-success"
+                type="button"
+                onClick={() => {
+                  resetNewEmployee();
+                  setAddModalOpen(true);
+                }}
+              >
+                ADD EMPLOYEE
+              </button>
+            </div>
+            <div className="filter-row" style={{ marginBottom: 14 }}>
+              <input
+                className="search-input"
+                style={{ maxWidth: 240 }}
+                placeholder="Search teammate"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {loading ? (
+              <div className="loading">
+                <div className="spinner" />
+                Loading employees...
+              </div>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="empty-state">No employees match the search.</div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Efficiency</th>
+                    <th>Workload</th>
+                    <th>Completed</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEmployees.map((emp) => {
+                    const load =
+                      Math.min(
+                        100,
+                        Math.round(((emp.current_workload || 0) / 40) * 100)
+                      ) || 0;
+                    return (
+                      <tr key={emp.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{emp.name}</div>
+                          <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                            {emp.email}
+                          </div>
+                        </td>
+                        <td>{emp.efficiency_score?.toFixed(1) ?? "--"}</td>
+                        <td>
+                          <div className="workload-bar">
+                            <div
+                              className={`workload-fill ${
+                                load < 40
+                                  ? "workload-low"
+                                  : load < 70
+                                  ? "workload-medium"
+                                  : "workload-high"
+                              }`}
+                              style={{ width: `${load}%` }}
+                            />
+                          </div>
+                          <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                            {emp.current_workload?.toFixed(1) ?? 0}h scheduled
+                          </div>
+                        </td>
+                        <td>{emp.completed_tasks || 0}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={() => fetchRecommendations(emp)}
+                            >
+                              Recommendations
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              onClick={() => deleteEmployee(emp)}
+                              disabled={removingId === emp.id}
+                            >
+                              {removingId === emp.id ? "Removing..." : "Remove"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            <Modal
+              open={Boolean(selectedEmployee)}
+              title={selectedEmployee?.name || ""}
+              onClose={() => {
+                setSelectedEmployee(null);
+                setRecommendation(null);
+              }}
+            >
+              {!recommendation ? (
+                <div className="loading">
+                  <div className="spinner" />
+                  Pulling insights...
+                </div>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Current Load:</strong>{" "}
+                    {recommendation.current_workload?.toFixed(1)}h
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Efficiency:</strong>{" "}
+                    {recommendation.efficiency_score?.toFixed(1)}
+                  </div>
+                  <div className="section-title" style={{ marginTop: 16 }}>
+                    Recommendations
+                  </div>
+                  {recommendation.recommendations?.length ? (
+                    <ul style={{ marginTop: 10, paddingLeft: 18 }}>
+                      {recommendation.recommendations.map((rec, idx) => (
+                        <li key={idx} style={{ marginBottom: 8 }}>
+                          <span
+                            className={`badge ${
+                              rec.priority === "high"
+                                ? "badge-warning"
+                                : rec.priority === "low"
+                                ? "badge-info"
+                                : "badge-success"
+                            }`}
+                            style={{ marginRight: 8 }}
+                          >
+                            {rec.priority}
+                          </span>
+                          {rec.message}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="empty-state">
+                      No specific guidance at this time.
+                    </div>
+                  )}
+                </div>
+              )}
+            </Modal>
+
+            <Modal
+              open={addModalOpen}
+              title="Add Employee"
+              onClose={() => {
+                setAddModalOpen(false);
+                resetNewEmployee();
+                setCreatingEmployee(false);
+              }}
+            >
+              <form onSubmit={createEmployee}>
+                <div style={{ marginBottom: 10 }}>
+                  <label>Name</label>
+                  <input
+                    className="form-input"
+                    name="name"
+                    value={newEmployee.name}
+                    onChange={handleNewEmployeeChange}
+                    placeholder="Full name"
+                    required
+                  />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label>Email</label>
+                  <input
+                    className="form-input"
+                    name="email"
+                    type="email"
+                    value={newEmployee.email}
+                    onChange={handleNewEmployeeChange}
+                    placeholder="email@company.com"
+                    required
+                  />
+                </div>
+                <div className="filter-row" style={{ marginBottom: 0 }}>
+                  <div>
+                    <label>Experience Level</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      name="experience_level"
+                      min="1"
+                      max="5"
+                      value={newEmployee.experience_level}
+                      onChange={handleNewEmployeeChange}
+                    />
+                  </div>
+                  <div>
+                    <label>Efficiency Score</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="10"
+                      name="efficiency_score"
+                      value={newEmployee.efficiency_score}
+                      onChange={handleNewEmployeeChange}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  disabled={creatingEmployee}
+                  style={{ width: "100%", marginTop: 12 }}
+                >
+                  {creatingEmployee ? "Saving..." : "Save"}
+                </button>
+              </form>
+            </Modal>
+            </div>
+          </div>
+        );
+      }
+
+      function Analytics({ showToast, onBack }) {
+        const [trends, setTrends] = useState([]);
+        const [breakdown, setBreakdown] = useState(null);
+        const [loading, setLoading] = useState(true);
+        const [refreshing, setRefreshing] = useState(false);
+        const [autoRefresh, setAutoRefresh] = useState(true);
+        const [lastUpdated, setLastUpdated] = useState(null);
+        const trendRef = useRef(null);
+        const diffRef = useRef(null);
+        const priorityRef = useRef(null);
+        const charts = useRef({ trend: null, difficulty: null, priority: null });
+        const isPageVisible = useRef(true);
+        const REFRESH_INTERVAL = 5000;
+
+        const loadAnalytics = useCallback(
+          async (withSpinner = false) => {
+            try {
+              if (withSpinner) setLoading(true);
+              else setRefreshing(true);
+
+              const [trendData, dashboard] = await Promise.all([
+                fetchJSON("/analytics/trends"),
+                fetchJSON("/analytics/dashboard"),
+              ]);
+
+              setTrends(trendData);
+              setBreakdown(dashboard);
+              setLastUpdated(new Date());
+            } catch (err) {
+              if (typeof showToast === "function") {
+                showToast(err.message, "error");
+              } else {
+                console.error(err);
+              }
+            } finally {
+              if (withSpinner) setLoading(false);
+              setRefreshing(false);
+            }
+          },
+          [showToast]
+        );
+
+        useEffect(() => {
+          loadAnalytics(true);
+        }, [loadAnalytics]);
+
+        useEffect(() => {
+          const handleVisibility = () => {
+            isPageVisible.current = !document.hidden;
+          };
+          document.addEventListener("visibilitychange", handleVisibility);
+          return () => document.removeEventListener("visibilitychange", handleVisibility);
+        }, []);
+
+        useEffect(() => {
+          if (!autoRefresh) return;
+          const id = setInterval(() => {
+            if (isPageVisible.current) {
+              loadAnalytics(false);
+            }
+          }, REFRESH_INTERVAL);
+          return () => clearInterval(id);
+        }, [autoRefresh, loadAnalytics]);
+
+        useEffect(() => {
+          return () => {
+            charts.current.trend?.destroy();
+            charts.current.difficulty?.destroy();
+            charts.current.priority?.destroy();
+          };
+        }, []);
+
+        useEffect(() => {
+          if (!trendRef.current || !trends.length) {
+            charts.current.trend?.destroy();
+            charts.current.trend = null;
+            return;
+          }
+
+          const labels = trends.map((item) => item.date);
+          const tasksCompleted = trends.map((item) => item.tasks_completed);
+          const avgAccuracy = trends.map((item) =>
+            Math.round((item.avg_accuracy || 0) * 100)
+          );
+
+          if (!charts.current.trend) {
+            charts.current.trend = new Chart(trendRef.current, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Tasks Completed",
+                    data: tasksCompleted,
+                    borderColor: "#667eea",
+                    tension: 0.4,
+                    fill: false,
+                  },
+                  {
+                    label: "Avg Accuracy",
+                    data: avgAccuracy,
+                    borderColor: "#f093fb",
+                    tension: 0.4,
+                    fill: false,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                  legend: { position: "bottom" },
+                },
+              },
+            });
+          } else {
+            const chart = charts.current.trend;
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = tasksCompleted;
+            chart.data.datasets[1].data = avgAccuracy;
+            chart.update("none");
+          }
+        }, [trends]);
+
+        useEffect(() => {
+          const diffData = breakdown?.difficultyDistribution || [];
+          if (!diffRef.current || !diffData.length) {
+            charts.current.difficulty?.destroy();
+            charts.current.difficulty = null;
+            return;
+          }
+
+          const labels = diffData.map((d) => d.difficulty);
+          const counts = diffData.map((d) => d.count);
+
+          if (!charts.current.difficulty) {
+            charts.current.difficulty = new Chart(diffRef.current, {
+              type: "bar",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Tasks",
+                    data: counts,
+                    backgroundColor: "#764ba2",
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+              },
+            });
+          } else {
+            const chart = charts.current.difficulty;
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = counts;
+            chart.update("none");
+          }
+        }, [breakdown]);
+
+        useEffect(() => {
+          const priorityData = breakdown?.priorityDistribution || [];
+          if (!priorityRef.current || !priorityData.length) {
+            charts.current.priority?.destroy();
+            charts.current.priority = null;
+            return;
+          }
+
+          const labels = priorityData.map(
+            (p) => PRIORITY_LABELS[p.priority] || `P${p.priority}`
+          );
+          const counts = priorityData.map((p) => p.count);
+
+          if (!charts.current.priority) {
+            charts.current.priority = new Chart(priorityRef.current, {
+              type: "doughnut",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    data: counts,
+                    backgroundColor: [
+                      "#43e97b",
+                      "#38f9d7",
+                      "#667eea",
+                      "#764ba2",
+                      "#f093fb",
+                    ],
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+              },
+            });
+          } else {
+            const chart = charts.current.priority;
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = counts;
+            chart.update("none");
+          }
+        }, [breakdown]);
+
+        const stats = breakdown?.stats || {};
+        const employeePerformance = useMemo(
+          () => (breakdown?.employeePerformance || []).slice(0, 4),
+          [breakdown]
+        );
+        const diffData = breakdown?.difficultyDistribution || [];
+        const priorityData = breakdown?.priorityDistribution || [];
+
+        if (loading)
+          return (
+            <div>
+              <BackButton onBack={onBack} />
+              <div className="loading">
+                <div className="spinner" />
+                Loading analytics...
+              </div>
+            </div>
+          );
+
+        return (
+          <div>
+            <BackButton onBack={onBack} />
+            <div className="content-card analytics-card">
+            <div className="section-header" style={{ alignItems: "flex-start" }}>
+              <div>
+                <div className="section-title">Analytics Overview</div>
+                <div style={{ color: "#666", fontSize: "0.85rem", marginTop: 4 }}>
+                  {lastUpdated
+                    ? `Last updated ${lastUpdated.toLocaleTimeString()}`
+                    : "Awaiting first refresh"}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <label
+                  className="tag"
+                  style={{ cursor: "pointer", display: "flex", gap: 6, alignItems: "center" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={autoRefresh}
+                    onChange={(e) => setAutoRefresh(e.target.checked)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  Auto refresh
+                </label>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  disabled={refreshing}
+                  onClick={() => loadAnalytics(false)}
+                >
+                  {refreshing ? "Refreshing..." : "Refresh Now"}
+                </button>
+              </div>
+            </div>
+
+            <div className="analytics-grid">
+              <div className="stats-grid analytics-stats-row">
+                <div className="stat-card">
+                  <div className="stat-value">{stats.total_tasks || 0}</div>
+                  <div>Total Tasks</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{stats.completed_tasks || 0}</div>
+                  <div>Completed</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{stats.active_tasks || 0}</div>
+                  <div>In Progress</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">
+                    {Math.round((stats.avg_time_accuracy || 0) * 100)}%
+                  </div>
+                  <div>Time Accuracy</div>
+                </div>
+              </div>
+
+              <div className="graph-stack">
+                <div className="graph-card">
+                  <div className="section-title">Productivity Trends</div>
+                  {trends.length ? (
+                    <canvas ref={trendRef} />
+                  ) : (
+                    <div className="empty-state">No trend data yet.</div>
+                  )}
+                </div>
+                <div className="graph-card">
+                  <div className="section-title">Difficulty Mix</div>
+                  {diffData.length ? (
+                    <canvas ref={diffRef} />
+                  ) : (
+                    <div className="empty-state">No difficulty insights yet.</div>
+                  )}
+                </div>
+                <div className="graph-card">
+                  <div className="section-title">Priority Mix</div>
+                  {priorityData.length ? (
+                    <canvas ref={priorityRef} />
+                  ) : (
+                    <div className="empty-state">No priority data yet.</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="top-performers-card">
+                <div className="section-title">Top Performers</div>
+                {employeePerformance.length ? (
+                  <div className="grid-two">
+                    {employeePerformance.map((emp) => (
+                      <div
+                        key={emp.id}
+                        className="quick-action"
+                        style={{ cursor: "default", border: "none" }}
+                      >
+                        <div style={{ fontWeight: 700 }}>{emp.name}</div>
+                        <div style={{ fontSize: "0.85rem", color: "#666", margin: "6px 0" }}>
+                          Experience L{emp.experience_level} • Efficiency{" "}
+                          {emp.efficiency_score?.toFixed(1) ?? "--"}
+                        </div>
+                        <div className="workload-bar" style={{ marginTop: 6 }}>
+                          <div
+                            className="workload-fill workload-low"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.round(((emp.current_workload || 0) / 40) * 100)
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                        <div style={{ fontSize: "0.75rem", color: "#666", marginTop: 4 }}>
+                          {emp.current_workload?.toFixed(1) ?? 0}h scheduled
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">No performance insights yet.</div>
+                )}
+              </div>
+            </div>
+            </div>
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
