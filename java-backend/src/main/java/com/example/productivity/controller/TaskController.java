@@ -67,6 +67,15 @@ public class TaskController {
         if (task.getPriority() == null) {
             task.setPriority(3);
         }
+        if (task.getEstimatedHours() == null) {
+            task.setEstimatedHours(0.0);
+        }
+        if (task.getDifficulty() == null) {
+            task.setDifficulty(5);
+        }
+        if (task.getStatus() == null) {
+            task.setStatus("pending");
+        }
         Task saved = taskRepository.save(task);
         return ResponseEntity.ok(Map.of("id", saved.getId(), "message", "Task created successfully"));
     }
